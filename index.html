@@ -229,7 +229,7 @@ ul,ol{margin:0;padding:0;list-style:none}
 .res{overflow:hidden}
 .mq{overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 7%,#000 93%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 7%,#000 93%,transparent 100%);margin:0 -20px}
 .mq+.mq{margin-top:18px}
-.mq ul{display:flex;gap:18px;width:max-content;padding:14px 0 22px;animation:mq 60s linear infinite}
+.mq ul{display:flex;gap:18px;width:max-content;padding:14px 18px 22px 0;animation:mq 60s linear infinite}
 .mq.rev ul{animation-direction:reverse;animation-duration:70s}
 .mq:hover ul{animation-play-state:paused}
 @keyframes mq{to{transform:translateX(-50%)}}
@@ -267,7 +267,13 @@ ul,ol{margin:0;padding:0;list-style:none}
 .team{display:flex;gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;padding:6px 2px 22px;scrollbar-width:none}
 .team::-webkit-scrollbar{display:none}
 .team.fade{-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent)}
-.team.loop{scroll-snap-type:none;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 4%,#000 96%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 4%,#000 96%,transparent 100%)}
+/* bosh sahifada ustozlar natijalar qatoridek to‘xtovsiz aylanadi (admin, 19.10.2026) — ikki nusxa, −50% siljiydi */
+.team.loop{display:block;overflow:hidden;scroll-snap-type:none;padding:0;margin:0 -20px;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 6%,#000 94%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 6%,#000 94%,transparent 100%)}
+.team.loop .ttrack{display:flex;gap:18px;width:max-content;padding:6px 18px 22px 0;animation:mq 90s linear infinite}
+.team.loop:hover .ttrack,.team.loop:focus .ttrack,.team.loop:focus-within .ttrack{animation-play-state:paused}
+.team.loop .uc{scroll-snap-align:none}
+.team.loop+.tnav{display:none}
 .cform .flink:not([hidden]){display:flex;flex-direction:column;gap:14px;margin-top:20px}
 .cform .flink .btn{width:100%;justify-content:center}
 .uc{flex:0 0 290px;scroll-snap-align:start;background:var(--card);border-radius:28px;padding:10px 10px 20px;display:flex;flex-direction:column}
@@ -1538,57 +1544,25 @@ var TADBIRLAR = [
   var PLUS = card({ism: "Yordamchi ustoz", rol: "Academic Support", bosh: "+1",
     matn: "Har guruhda asosiy ustozdan tashqari yana bitta ustoz: uy vazifasi, Speaking va qolib ketgan mavzularda yordam beradi."}, "plus");
   function byPhoto(ids){ return ids.slice().sort(function(a, b){ return (USTOZLAR[b].rasm ? 1 : 0) - (USTOZLAR[a].rasm ? 1 : 0); }); }
-  /* bosh sahifa: qator o‘zi sekin o‘ngdan chapga siljiydi va cheksiz aylanadi (admin, 18.10.2026). Sichqoncha, barmoq yoki
-     klaviatura tekkanda to‘xtaydi, qo‘yib yuborilgach davom etadi; strelkalar bitta ustozga suradi. Harakatni
-     kamaytirish yoqilgan bo‘lsa — oddiy qator. */
-  var team = $("#team"), teamHtml = byPhoto(Object.keys(USTOZLAR)).map(ucHtml).join("") + PLUS, loop = !reduce;
-  team.innerHTML = loop ? teamHtml + teamHtml : teamHtml;
-  if (loop){
+  /* bosh sahifa: ustozlar natijalar qatoridek to‘xtovsiz aylanadi (admin, 19.10.2026: «tinimsiz aylanib tursin xuddi
+     natijalardek») — CSS animatsiya, ikki nusxa; sichqoncha ustida yoki klaviatura bilan tanlanganda to‘xtaydi.
+     Harakatni kamaytirish yoqilgan bo‘lsa — strelkali oddiy qator. */
+  var team = $("#team"), teamHtml = byPhoto(Object.keys(USTOZLAR)).map(ucHtml).join("") + PLUS;
+  if (!reduce){
     team.classList.add("loop");
-    $$(".uc", team).forEach(function(c, i, all){ if (i >= all.length / 2) c.setAttribute("aria-hidden", "true"); });
+    team.innerHTML = '<div class="ttrack">' + teamHtml + teamHtml + '</div>';
+    var track = $(".ttrack", team);
+    $$(".uc", track).forEach(function(c, i, all){ if (i >= all.length / 2) c.setAttribute("aria-hidden", "true"); });
+    var tezlik = function(){ track.style.animationDuration = Math.max(40, Math.round(track.scrollWidth / 2 / 40)) + "s"; };  // 40 px/s
+    requestAnimationFrame(tezlik); window.addEventListener("resize", tezlik);
+  } else {
+    team.innerHTML = teamHtml;
+    var edge = function(){ team.classList.toggle("fade", team.scrollLeft + team.clientWidth < team.scrollWidth - 6); };
+    team.addEventListener("scroll", edge, {passive: true}); window.addEventListener("resize", edge); requestAnimationFrame(edge);
+    var stepTeam = function(d){ var c = team.querySelector(".uc"); team.scrollBy({left: d * (c.offsetWidth + 18), behavior: "auto"}); };
+    $("#prev").addEventListener("click", function(){ stepTeam(-1); });
+    $("#next").addEventListener("click", function(){ stepTeam(1); });
   }
-  function edge(el){ if (!loop) el.classList.toggle("fade", el.scrollLeft + el.clientWidth < el.scrollWidth - 6); }
-  team.addEventListener("scroll", function(){ edge(team); }, {passive: true});
-  window.addEventListener("resize", function(){ edge(team); });
-  requestAnimationFrame(function(){ edge(team); });
-  var cardStep = function(){ var c = team.querySelector(".uc"); return c.offsetWidth + 18; };
-  var pos = 0, last = 0, hold = 0, seen = false, running = false, SPEED = 32;   // px/soniya
-  function wrapTeam(){  // ikki nusxa: chapga ham, o‘ngga ham cheksiz
-    var h = team.scrollWidth / 2;
-    if (team.scrollLeft >= h) team.scrollLeft -= h;
-    else if (team.scrollLeft < 1) team.scrollLeft += h;
-  }
-  function tick(t){
-    if (!seen){ running = false; last = 0; return; }
-    var dt = last ? Math.min(64, t - last) : 0; last = t;
-    if (!document.hidden && t > hold){
-      var h = team.scrollWidth / 2;
-      pos += SPEED * dt / 1000; if (pos >= h) pos -= h;
-      team.scrollLeft = pos;
-    } else pos = team.scrollLeft;   // foydalanuvchi o‘zi surgan joydan davom etamiz
-    requestAnimationFrame(tick);
-  }
-  function startTeam(){ if (loop && seen && !running){ running = true; pos = team.scrollLeft; requestAnimationFrame(tick); } }
-  function pause(ms){ hold = ms === Infinity ? Infinity : performance.now() + ms; if (ms !== Infinity) wrapTeam(); }
-  if (loop){
-    team.addEventListener("pointerenter", function(e){ if (e.pointerType === "mouse") pause(Infinity); });
-    team.addEventListener("pointerleave", function(e){ if (e.pointerType === "mouse") pause(900); });
-    team.addEventListener("touchstart", function(){ pause(Infinity); }, {passive: true});
-    team.addEventListener("touchend", function(){ pause(3000); }, {passive: true});
-    team.addEventListener("wheel", function(){ pause(2500); }, {passive: true});
-    team.addEventListener("focusin", function(){ pause(Infinity); });
-    team.addEventListener("focusout", function(){ pause(1500); });
-    team.addEventListener("scroll", function(){ if (hold === Infinity || performance.now() < hold) pos = team.scrollLeft; }, {passive: true});
-    if ("IntersectionObserver" in window){
-      new IntersectionObserver(function(en){ seen = en[0].isIntersecting; startTeam(); }).observe(team);
-    } else { seen = true; startTeam(); }
-  }
-  function stepTeam(d){
-    if (loop){ if (hold !== Infinity) pause(4000); if (d < 0 && team.scrollLeft < cardStep()) team.scrollLeft += team.scrollWidth / 2; }
-    team.scrollBy({left: d * cardStep(), behavior: reduce ? "auto" : "smooth"});
-  }
-  $("#prev").addEventListener("click", function(){ stepTeam(-1); });
-  $("#next").addEventListener("click", function(){ stepTeam(1); });
 
   /* ---- savollar ---- */
   function faqHtml(list){
