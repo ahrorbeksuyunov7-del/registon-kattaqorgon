@@ -1044,7 +1044,7 @@ async function baholat(i, audio, id){
   let js = null;
   for(let u=0; u<2 && !(js && js.ok); u++){
     if(u) await kut(1200);
-    try{ js = await jonat({t:"speaking", id, i, audio}, 60000); }catch(e){ js = null; }
+    try{ js = await jonat({t:"speaking", id, i, audio, ism:state.name.trim()}, 60000); }catch(e){ js = null; }
     if(js && !js.ok && /chegara|sozlanmagan|audio|raqami/.test(String(js.xato||""))) break;   // qayta urinish befoyda
   }
   if(state.id !== id) return;        // bu orada yangi o'quvchi boshlagan
