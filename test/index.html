@@ -332,7 +332,7 @@ const SPEAKING = [   // tartibi va matni sayt/test/apps_script/Code.gs dagi SAVO
 
 /* linear steps that make up the whole test */
 const STEPS = [
-  {type:'grammar', from:0, to:30},
+  {type:'grammar'},
   {type:'reading', passage:0},
   {type:'reading', passage:1},
   {type:'reading', passage:2},
@@ -341,6 +341,48 @@ const STEPS = [
   {type:'speaking', idx:2},
 ];
 const TOTAL_ITEMS = 30 + 10; // scored items only, for the overall bar
+
+/* ---------------- har o'quvchiga o'z tartibi ----------------
+   Admin (23.10.2026): «savollar o'rni almashib kelaversin, javoblar o'rni ham almashib kelsa…
+   bir xil A va C variantlarni to'g'ri qilib chiqmagin». Grammatika savollari va har matn ichidagi savollar
+   aralashadi (matnlar tartibi o'sha: osondan qiyinga), variantlar ham. To'g'ri javob A, B, C, D ga teng
+   taqsimlanadi (farqi 1 tadan oshmaydi), bir harf 3 marta ketma-ket kelmaydi.
+   Jadvalga esa fayldagi raqam va harf yoziladi — o'quvchida qanday tartibda chiqqanidan qat'i nazar. */
+function aralash(a){
+  a = a.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+function togriOrinlari(n){                 // n ta savolda to'g'ri javob turadigan o'rinlar (0–3)
+  const harflar = aralash([0,1,2,3]);
+  const asos = Array.from({length:n}, (_,i)=>harflar[i%4]);
+  const uchta = s => s.some((x,i)=>i>=2 && x===s[i-1] && x===s[i-2]);
+  let s = aralash(asos);
+  for(let urinish=0; urinish<1000 && uchta(s); urinish++) s = aralash(asos);
+  return s;
+}
+function variantTartibi(q, orin){         // ekrandagi o'rin → fayldagi variant raqami
+  const boshqa = aralash(q.o.map((_,i)=>i).filter(i=>i!==q.a));
+  boshqa.splice(orin, 0, q.a);
+  return boshqa;
+}
+function tartibYasa(){                    // {g: [{i, o}], r: [[{i, o}] har matn uchun]} — i: fayldagi savol
+  const g = aralash(GRAMMAR.map((_,i)=>i));
+  const go = togriOrinlari(g.length);
+  const r = READING.map(p=>aralash(p.questions.map((_,i)=>i)));
+  const ro = togriOrinlari(r.reduce((s,l)=>s+l.length, 0));
+  let k = 0;
+  return {
+    g: g.map((i,n)=>({i, o: variantTartibi(GRAMMAR[i], go[n])})),
+    r: r.map((l,p)=>l.map(i=>({i, o: variantTartibi(READING[p].questions[i], ro[k++])}))),
+  };
+}
+function bolimSavollari(step){            // joriy bo'lim: fayldagi savollar va o'quvchidagi tartib
+  return step.type==='grammar'
+    ? {list: GRAMMAR, tartib: state.tartib.g, oldingi: 0}
+    : {list: READING[step.passage].questions, tartib: state.tartib.r[step.passage],
+       oldingi: READING.slice(0, step.passage).reduce((s,p)=>s+p.questions.length, 0)};
+}
 
 /* ---------------- state ---------------- */
 let state = {};
@@ -357,7 +399,8 @@ function resetState(){
     speakTimerId:null,
     speakSecondsLeft:45,
     id:null,                               // yozma qism tugaganda beriladi (jadvaldagi qator)
-    javoblar:[],                           // {k:'G'|'R', t: tanlangan, a: to'g'risi}
+    tartib: tartibYasa(),                  // shu o'quvchidagi savollar va variantlar tartibi
+    javoblar:[],                           // {k:'G'|'R', n: fayldagi raqam, t: tanlangan, a: to'g'risi} — fayldagi variant
     speak:[null,null,null],                // har topshiriq: {holat:'kutilmoqda'|'tayyor'|'xato', baho}
     mic: ovozBormi() ? null : 'yoq',       // null — hali sinalmagan, 'ok', 'yoq' (xodim tinglaydi)
     rec:'tayyor',                          // joriy topshiriq: tayyor | yozmoqda | jim
@@ -450,17 +493,10 @@ function progressStepper(){
 /* ---------------- grammar / reading question ---------------- */
 function renderQuestionScreen(kind){
   const step = currentStep();
-  let list, labelTotal, labelIdx;
-  if(kind==='grammar'){
-    list = GRAMMAR.slice(step.from, step.to);
-    labelTotal = list.length;
-    labelIdx = state.subIdx;
-  } else {
-    list = READING[step.passage].questions;
-    labelTotal = list.length;
-    labelIdx = state.subIdx;
-  }
-  const q = list[labelIdx];
+  const {list, tartib} = bolimSavollari(step);
+  const labelTotal = tartib.length, labelIdx = state.subIdx;
+  const t = tartib[labelIdx];
+  const q = list[t.i];
   const passageBlock = kind==='reading' ? `
     <div class="passage passage-sticky">
       <div class="passage-label">📖 Matn</div>
@@ -475,10 +511,10 @@ function renderQuestionScreen(kind){
       <div class="qmeta"><span>Savol ${labelIdx+1} / ${labelTotal}</span><span>${state.itemsDone+1} / ${TOTAL_ITEMS} umumiy</span></div>
       <h2>${esc(q.q)}</h2>
       <div class="options" id="optionsWrap">
-        ${q.o.map((opt,i)=>`
+        ${t.o.map((oi,i)=>`
           <div class="opt" data-i="${i}">
             <div class="mark">${String.fromCharCode(65+i)}</div>
-            <div>${esc(opt)}</div>
+            <div>${esc(q.o[oi])}</div>
           </div>`).join('')}
       </div>
       <div class="footer-actions">
@@ -543,17 +579,19 @@ function wireUpEvents(){
 function onQuestionAnswered(){
   const step = currentStep();
   const kind = step.type;
-  const list = kind==='grammar' ? GRAMMAR.slice(step.from, step.to) : READING[step.passage].questions;
-  const q = list[state.subIdx];
-  const isCorrect = state.selected === q.a;
+  const {list, tartib, oldingi} = bolimSavollari(step);
+  const t = tartib[state.subIdx];
+  const q = list[t.i];
+  const tanlov = state.selected==null ? null : t.o[state.selected];   // fayldagi variant raqami
+  const isCorrect = tanlov === q.a;
   if(kind==='grammar' && isCorrect) state.grammarCorrect++;
   if(kind==='reading' && isCorrect) state.readingCorrect++;
-  state.javoblar.push({k: kind==='grammar' ? 'G' : 'R', t: state.selected, a: q.a});
+  state.javoblar.push({k: kind==='grammar' ? 'G' : 'R', n: oldingi + t.i + 1, t: tanlov, a: q.a});
   state.selected=null;
   state.itemsDone++;
   state.subIdx++;
 
-  if(state.subIdx >= list.length){
+  if(state.subIdx >= tartib.length){
     goToNextStep();
     return;
   }
@@ -757,18 +795,18 @@ function yozmaYakun(){
     .then(ok=>{ if(state.id===id){ state.natijaHolat = ok; holat(ok); } });
 }
 function harf(i){ return i==null ? '-' : String.fromCharCode(65+i); }
-function javoblarMatni(){
-  const g = state.javoblar.filter(j=>j.k==='G').map(j=>harf(j.t)).join('');
-  const r = state.javoblar.filter(j=>j.k==='R').map(j=>harf(j.t)).join('');
+function faylTartibida(k){ return state.javoblar.filter(j=>j.k===k).sort((x,y)=>x.n-y.n); }
+function javoblarMatni(){                 // fayldagi tartibda va fayldagi harflar bilan
+  const g = faylTartibida('G').map(j=>harf(j.t)).join('');
+  const r = faylTartibida('R').map(j=>harf(j.t)).join('');
   let k = 0;
   const rq = READING.map(p=>{ const t = r.slice(k, k+p.questions.length); k += p.questions.length; return t; }).filter(Boolean).join(' ');
   return "G: " + (g.match(/.{1,5}/g)||[]).join(' ') + " | R: " + rq;
 }
 function xatolarMatni(){
-  const out = []; let gn = 0, rn = 0;
-  state.javoblar.forEach(j=>{
-    const n = j.k==='G' ? ++gn : ++rn;
-    if(j.t !== j.a) out.push(j.k + n + ": " + harf(j.t) + " (to‘g‘risi " + harf(j.a) + ")");
+  const out = [];
+  faylTartibida('G').concat(faylTartibida('R')).forEach(j=>{
+    if(j.t !== j.a) out.push(j.k + j.n + ": " + harf(j.t) + " (to‘g‘risi " + harf(j.a) + ")");
   });
   return out.length ? out.join("; ") : "yo‘q";
 }
