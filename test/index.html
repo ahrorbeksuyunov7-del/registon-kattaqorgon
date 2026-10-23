@@ -120,6 +120,7 @@
   .passage{ background:#fbf9f5; border:1px solid var(--line); border-left:4px solid var(--brand); border-radius:4px; padding:16px 18px; font-size:15px; line-height:1.65; color:var(--ink); margin-bottom:8px; }
   .passage-ref{ font-size:13px; color:var(--ink-soft); cursor:pointer; margin-bottom:14px; display:inline-block; }
   .passage-sticky{ font-size:13.5px; line-height:1.55; max-height:140px; overflow-y:auto; margin-bottom:14px; }
+  .passage-title{ font-weight:700; color:var(--ink); margin-bottom:6px; }
   .passage-label{ font-family:'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--brand-dark); font-weight:700; margin-bottom:6px; }
 
   /* fact card */
@@ -257,70 +258,71 @@ let factCounter = 0;
 
 /* ---------------- content ---------------- */
 const GRAMMAR = [
-  {q:"My father is 45 and my uncle is 50, so he's ___ my father.", o:["the oldest of","older than","as old as","more old than"], a:1},
-  {q:"I usually ___ football on Saturdays.", o:["go","do","play","make"], a:2},
-  {q:"There ___ some bread on the table.", o:["is","are","have","has"], a:0},
-  {q:"This is ___ area with a lot of shops.", o:["an agricultural","a commercial","a residential","an industrial"], a:1},
-  {q:"Which phrase best describes 'raining heavily and cold'?", o:["strong wind and snow","heavy rain and cold temperatures","thick cloud but warm","light drizzle and mild"], a:1},
-
-  {q:"She's very ___ — she always keeps her promises.", o:["patient","strict","reliable","curious"], a:2},
-  {q:"My sister ___ to Korea last month.", o:["has gone","has been","went","goes"], a:2},
-  {q:"Tomorrow is a day off, so we ___ go to work.", o:["have to","mustn't","don't have to","should"], a:2},
-  {q:"I can't ___ my nails, I don't have scissors.", o:["brush","cut","wash","file"], a:1},
-  {q:"Jamila sent me ___ about the weekend plans.", o:["a blog","a website","an email","a letterbox"], a:2},
-
-  {q:"We rented a cottage ___ the lake.", o:["it overlooks","overlooked","overlooking","overlooks"], a:2},
-  {q:"She burst ___ laughter when she heard the joke.", o:["into","out","with","in"], a:0},
-  {q:"Where did you go ___ vacation last winter?", o:["for","on","to","at"], a:1},
-  {q:"My uncle ___ moving to Germany next year.", o:["would like","is planning","is thinking of","hopes"], a:2},
-  {q:"When I moved to Baku, it felt strange, but now I'm used ___ here.", o:["living","to live","to living","live"], a:2},
-
-  {q:"Not until last week ___ possible to register online.", o:["it was possible","was possible","was it possible","possible was it"], a:2},
-  {q:"If I ___ hard, I ___ the exam.", o:["study; will pass","will study; pass","study; pass","will study; will pass"], a:0},
-  {q:"I wish I ___ have a test tomorrow!", o:["don't","didn't","won't","wouldn't"], a:1},
-  {q:"The company plans to ___ prices on electronics.", o:["increase","expand","enlarge","grow"], a:0},
-  {q:"Criminals are people found guilty of ___ the law.", o:["breaking","cheating","committing","doing"], a:0},
-
-  {q:"Sea levels ___ rise steadily over the next century.", o:["are expected to","are known to","think to","are believed that they"], a:0},
-  {q:"I've ___ for this bus for almost an hour!", o:["waited","been waiting","waiting","wait"], a:1},
-  {q:"His hair is too long; he should ___ soon.", o:["cut it","have cut it","have it cut","cutting it"], a:2},
-  {q:"Nilufar got ___ last year, so now she's a senior manager.", o:["promoted","a raise","made redundant","fired"], a:0},
-  {q:"The article, ___ surprised many economists, was published today.", o:["it","that","which","who"], a:2},
-
-  {q:"There ___ a serious accident if the driver hadn't braked in time.", o:["was","had been","would have been","would be"], a:2},
-  {q:"This region used to be ___, but after redevelopment it became fashionable.", o:["an affluent","a trendy","a run-down","a modern"], a:2},
-  {q:"In the early 1900s, cars were ___ expensive that few people could own one.", o:["too","such","so","very"], a:2},
-  {q:"Researchers say the vaccine is a major ___ in disease prevention.", o:["investigation","progress","breakthrough","development"], a:2},
-  {q:"___ concerns economists most is the rising cost of living.", o:["That","Which","What","Who"], a:2},
+  {q:"Popular movie stars are ____ famous than unknown authors.", o:["much","many","more","most"], a:2},
+  {q:"The travel agent recommended ____ in September.", o:["travel","to travel","traveling","traveled"], a:2},
+  {q:"I've finally decided to take ____ vacation to France next spring.", o:["a","an","the","—"], a:0},
+  {q:"Orville and Wilbur Wright were the inventors ____ built the first practical airplane.", o:["which","who","whose","where"], a:1},
+  {q:"The birthday party ____ last week.", o:["is","will be","was","has been"], a:2},
+  {q:"I can't believe they still ____ the bridge repairs.", o:["didn't finish","haven't finished","aren't finish","not finished"], a:1},
+  {q:"Because of issues with her passport, Betsy was not prepared to travel abroad ____ her children.", o:["of","for","with","from"], a:2},
+  {q:"In an airplane emergency, it is important to take care of ____ before assisting others.", o:["you","your","yourself","yours"], a:2},
+  {q:"The house was full of smoke, so they had no choice but to wait ____ as it cleared.", o:["outside","inside","between","over"], a:0},
+  {q:"Anyone can make an ____ mistake from time to time.", o:["honestly","honest","honesty","honor"], a:1},
+  {q:"The student ____ his homework two hours ago.", o:["finishes","has finished","finished","is finishing"], a:2},
+  {q:"Bicycling is her favourite hobby, and she ____ her bike to school every day.", o:["rides","is riding","rode","has ridden"], a:0},
+  {q:"The artist ____ a beautiful portrait when his pencil broke.", o:["drew","is drawing","was drawing","has drawn"], a:2},
+  {q:"John's friend ____ a student at the university.", o:["have","is","were","are"], a:1},
+  {q:"Would you mind buying me ____ popcorn while you are at the store?", o:["a","any","some","many"], a:2},
+  {q:"A person's passive vocabulary is often twice ____ his or her active vocabulary.", o:["as large than","larger as","as large as","so large than"], a:2},
+  {q:"If I ____ known that my friends were going to be delayed, I would have spent more time tidying my house.", o:["have","had","would have","has"], a:1},
+  {q:"By this time next year, my brother ____ a doctor.", o:["becomes","will become","will have become","has become"], a:2},
+  {q:"It would be best for them ____ procrastinating so that they can avoid feeling stressed.", o:["stop","stopping","to stop","stopped"], a:2},
+  {q:"The workers finished painting the room, ____ they can now begin hanging photos on the walls.", o:["although","so","unless","despite"], a:1},
+  {q:"If the owner ____ more polite, his employees would work harder.", o:["is","were","has been","will be"], a:1},
+  {q:"Mary has had many interviews ____ she graduated in May, but still no job offers.", o:["for","while","since","during"], a:2},
+  {q:"The man couldn't find his keys because his wife ____ them.", o:["takes","has taken","had taken","was taking"], a:2},
+  {q:"Many people stayed at the beach ____ the warnings that a major storm was coming.", o:["because","in spite of","although","unless"], a:1},
+  {q:"Commuters are twice ____ public transportation when gas prices increase.", o:["as likely to use","more likely using","as likely using","likely to using"], a:0},
+  {q:"Only if the temperature decreases significantly ____ a fire.", o:["we will make","will we make","we make","we would make"], a:1},
+  {q:"If a scientist ____ a cure for cancer, he or she would probably win the Nobel Prize.", o:["has found","were to find","will find","would find"], a:1},
+  {q:"Brilliant, beautiful, and durable, ____ by their cut, clarity, colour, and carat weight.", o:["it is possible to judge diamonds","we can judge diamonds","diamonds are judged","judging diamonds is done"], a:2},
+  {q:"It was completely worth saving up money to visit Disneyland, ____ it took him an entire year to save enough.", o:["in spite of","despite","even though","nevertheless"], a:2},
+  {q:"The professor mentioned that he ____ grading papers shortly before the school began its fire drill.", o:["has been","had been","was being","would have"], a:1},
 ];
 
 const READING = [
   {
-    passage:"Last weekend, Malika went to the market with her mother. They bought fresh vegetables, fruit, and bread. In the afternoon, they cooked dinner together. Malika enjoyed cooking, but she didn't like washing the dishes afterwards.",
+    title:"Halloween in America",
+    passage:"Halloween is a popular holiday in America. People celebrate it on October 31. Children wear costumes and visit houses to get sweets. People decorate their houses with pumpkins and lights. Many families have Halloween parties and play games. Children and adults enjoy this holiday.",
     questions:[
-      {q:"When did Malika go to the market?", o:["yesterday","last weekend","this morning","next week"], a:1},
-      {q:"Who did she go with?", o:["her father","her friend","her mother","alone"], a:2},
-      {q:"What didn't Malika like?", o:["cooking","shopping","washing dishes","eating"], a:2},
+      {q:"When do people celebrate Halloween?", o:["October 1","October 15","October 31","November 31"], a:2},
+      {q:"What do children get from people?", o:["Books","Sweets","Clothes","Toys"], a:1},
+      {q:"What do people use to decorate their houses?", o:["Pumpkins and lights","Flowers and books","Toys and bags","Food and clothes"], a:0},
     ]
   },
   {
-    passage:"Remote work has become increasingly common since the pandemic, offering employees more flexibility. However, studies suggest that many workers struggle to separate their professional and personal lives when working from home. Companies are now exploring hybrid models that combine office days with remote days to balance productivity and well-being.",
+    passage:"The Colosseum is a famous ancient building in Rome, Italy. In the past, it was a sports arena where gladiators fought each other. Thousands of people watched them fight. Gladiators were often slaves or prisoners. After a fight, people voted with their thumbs. “Thumbs up” meant the gladiator should live, while “thumbs down” meant he should die.",
     questions:[
-      {q:"What has increased since the pandemic?", o:["office attendance","remote work","travel","unemployment"], a:1},
-      {q:"What problem do many remote workers face?", o:["low pay","separating work and personal life","lack of internet","too much travel"], a:1},
-      {q:"What are companies exploring?", o:["fully remote models only","hybrid models","four-day weeks","no changes"], a:1},
+      {q:"What is the passage mostly about?", o:["Tourists","The Colosseum","Roman emperors","Wild animals"], a:1},
+      {q:"According to the passage, what happened inside the Colosseum in the past?", o:["People voted in elections.","Gladiators fought each other.","Domestic animals were kept there.","People discussed many problems."], a:1},
+      {q:"According to the passage, what did “thumbs up” mean for the defeated gladiators?", o:["Money","Prison","Death","Life"], a:3},
     ]
   },
   {
-    passage:"The relationship between economic growth and environmental sustainability remains a contentious issue among policymakers. Proponents of green growth argue that technological innovation can decouple economic expansion from environmental degradation, citing renewable energy and efficiency gains as evidence. Critics, however, contend that continuous growth is fundamentally incompatible with finite planetary resources, regardless of technological advances.",
+    passage:"The city of London has been a world financial center for many years. Until about fifty years ago, its significance was due to the fact that London was the capital city of a major trading nation. After the financial difficulties of the first part of the twentieth century, the city might have slowly lost its influence in international finance. But in fact since 1960, it has recovered rapidly, and developed at great speed in recent years. A new city has grown, modern, efficient and looking forward to the future.",
     questions:[
-      {q:"What is the main debate described in the passage?", o:["whether cities should grow","the link between growth and sustainability","renewable energy costs","population control"], a:1},
-      {q:"What do proponents of green growth argue?", o:["growth must stop","technology can separate growth from harm","resources are infinite","pollution is unavoidable"], a:1},
-      {q:"What is the critics' main argument?", o:["technology solves everything","growth is incompatible with finite resources","green growth is too expensive","there is no debate"], a:1},
-      {q:"The word 'contentious' most nearly means:", o:["agreed upon","disputed","irrelevant","resolved"], a:1},
+      {q:"London was a world financial center because it …", o:["didn't do any trade as a capital city.","was the capital of a country leading in commerce.","was very important fifty years ago.","has been the capital city for fifty years."], a:1},
+      {q:"In the first part of the twentieth century, the city was not as powerful as it had been …", o:["because the country was financially worse.","since other cities replaced it in the finance world.","as it was not developing at great speed.","although it had financial difficulties."], a:0},
+      {q:"We understand from the passage that London …", o:["is looking forward to growing modern and efficient.","recovered quickly in 1960 despite the difficulties.","didn't take a long time to gain its strength.","worked hard for many years to be powerful again, yet it failed."], a:2},
+      {q:"According to the passage, what happened to London after 1960?", o:["It lost its importance in international finance.","It became less modern and efficient.","It developed rapidly and regained its influence.","It stopped being an important trading center."], a:2},
     ]
   },
 ];
+
+function passageTitle(i){
+  const t = READING[i].title;
+  return t ? `<div class="passage-title">${esc(t)}</div>` : '';
+}
 
 const SPEAKING = [   // tartibi va matni sayt/test/apps_script/Code.gs dagi SAVOLLAR bilan bir xil
   {uz:"O'zingiz haqingizda gapiring: ismingiz, yashash joyingiz va sevimli mashg'ulotingiz.", en:"Talk about yourself: your name, where you live and your favourite hobby."},
@@ -462,7 +464,7 @@ function renderQuestionScreen(kind){
   const passageBlock = kind==='reading' ? `
     <div class="passage passage-sticky">
       <div class="passage-label">📖 Matn</div>
-      ${esc(READING[step.passage].passage)}
+      ${passageTitle(step.passage)}${esc(READING[step.passage].passage)}
     </div>` : '';
 
   return `
@@ -585,7 +587,7 @@ function renderReadingIntro(){
       <div class="eyebrow"><span class="dot"></span>Reading bo'limi</div>
       ${progressStepper()}
       <h2>Matnni diqqat bilan o'qing</h2>
-      <div class="passage">${esc(READING[step.passage].passage)}</div>
+      <div class="passage">${passageTitle(step.passage)}${esc(READING[step.passage].passage)}</div>
       <p>Keyingi sahifada shu matn boʻyicha savollar boʻladi. Kerak boʻlsa, savollar paytida matnni qayta ochib oʻqishingiz mumkin.</p>
       <div class="fact-card"><img src="${LOGO_MARK}" alt=""><div class="txt">${nextFact()}</div></div>
       <div class="footer-actions">
